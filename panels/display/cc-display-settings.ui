@@ -59,6 +59,20 @@
           </object>
         </child>
         <child>
+          <object class="AdwActionRow" id="variable_refresh_rate_row">
+            <property name="width_request">100</property>
+            <property name="title" translatable="yes">Variable Refresh Rate</property>
+            <child>
+              <object class="GtkSwitch" id="variable_refresh_rate_switch">
+                <property name="can_focus">False</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <signal name="notify::active" handler="on_variable_refresh_rate_switch_active_changed_cb" swapped="no"/>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
           <object class="AdwActionRow" id="underscanning_row">
             <property name="width_request">100</property>
             <property name="title" translatable="yes">Adjust for TV</property>
