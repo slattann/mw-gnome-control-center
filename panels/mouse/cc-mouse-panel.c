@@ -209,6 +209,19 @@ setup_dialog (CcMousePanel *self)
   button = self->left_handed ? self->primary_button_right : self->primary_button_left;
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
 
+  /* Flip button order for RTL locales */
+  if (gtk_widget_get_direction (GTK_WIDGET (self)) == GTK_TEXT_DIR_RTL) {
+    GtkWidget *parent;
+
+    parent = gtk_widget_get_parent (GTK_WIDGET (self->primary_button_left));
+    gtk_container_child_set (GTK_CONTAINER (parent),
+                             GTK_WIDGET (self->primary_button_left),
+                             "left-attach", 1, NULL);
+    gtk_container_child_set (GTK_CONTAINER (parent),
+                             GTK_WIDGET (self->primary_button_right),
+                             "left-attach", 0, NULL);
+  }
+
   g_settings_bind (self->mouse_settings, "left-handed",
                    self->primary_button_left, "active",
                    G_SETTINGS_BIND_DEFAULT | G_SETTINGS_BIND_INVERT_BOOLEAN);
