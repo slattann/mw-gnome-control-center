@@ -69,6 +69,23 @@
       </object>
     </child>
     <child>
+     <object class="HdyActionRow" id="dpst_row">
+       <property name="width_request">100</property>
+       <property name="visible">True</property>
+       <property name="can_focus">True</property>
+       <property name="title" translatable="yes">Intel DPST</property>
+       <child>
+         <object class="GtkSwitch" id="dpst_switch">
+           <property name="visible">True</property>
+           <property name="can_focus">True</property>
+           <property name="halign">end</property>
+           <property name="valign">center</property>
+           <signal name="notify::active" handler="on_dpst_switch_active_changed_cb" swapped="no"/>
+         </object>
+       </child>
+     </object>
+   </child>
+    <child>
       <object class="HdyActionRow" id="scale_row">
         <property name="width_request">100</property>
         <property name="visible">True</property>

@@ -52,6 +52,8 @@ struct _CcDisplaySettings
   GtkWidget        *underscanning_switch;
   GtkWidget        *variable_refresh_rate_row;
   GtkWidget        *variable_refresh_rate_switch;
+  GtkWidget        *dpst_row;
+  GtkWidget        *dpst_switch;
 };
 
 typedef struct _CcDisplaySettings CcDisplaySettings;
@@ -235,7 +237,7 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
   GtkRadioButton *group = NULL;
   gint buttons = 0;
   const gdouble *scales, *scale;
-
+fprintf(stderr, "[SAMEER][%s:%d] \n", __func__,__LINE__);
   self->idle_udpate_id = 0;
 
   if (!self->config || !self->selected_output)
@@ -246,15 +248,19 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
       gtk_widget_set_visible (self->scale_row, FALSE);
       gtk_widget_set_visible (self->underscanning_row, FALSE);
       gtk_widget_set_visible (self->variable_refresh_rate_row, FALSE);
+      gtk_widget_set_visible (self->dpst_row, TRUE);
 
       return G_SOURCE_REMOVE;
     }
+    gtk_widget_set_visible (self->dpst_row, TRUE);
+	fprintf(stderr, "[SAMEER][%s:%d] (gtk_widget_set_visible) called for DPST \n", __func__,__LINE__);
 
   g_object_freeze_notify ((GObject*) self->orientation_row);
   g_object_freeze_notify ((GObject*) self->refresh_rate_row);
   g_object_freeze_notify ((GObject*) self->resolution_row);
   g_object_freeze_notify ((GObject*) self->underscanning_switch);
   g_object_freeze_notify ((GObject*) self->variable_refresh_rate_switch);
+  g_object_freeze_notify ((GObject*) self->dpst_switch);
 
   cc_display_monitor_get_geometry (self->selected_output, NULL, NULL, &width, &height);
 
@@ -444,6 +450,7 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
                           !cc_display_config_is_cloning (self->config));
   gtk_switch_set_active (GTK_SWITCH (self->variable_refresh_rate_switch),
                          cc_display_monitor_get_variable_refresh_rate (self->selected_output));
+  gtk_switch_set_active (GTK_SWITCH (self->dpst_switch), TRUE);
 
   self->updating = TRUE;
   g_object_thaw_notify ((GObject*) self->orientation_row);
@@ -579,7 +586,17 @@ on_variable_refresh_rate_switch_active_changed_cb (GtkWidget         *widget,
   g_signal_emit_by_name (G_OBJECT (self), "updated", self->selected_output);
 }
 
+static void
+on_dpst_switch_active_changed_cb (GtkWidget         *widget,
+                                   GParamSpec        *pspec,
+                                   CcDisplaySettings *self)
+{
+	if(self->updating)
+		return;
+	cc_display_monitor_set_dpst (self->selected_output, gtk_switch_get_active (GTK_SWITCH (self->dpst_switch)));
+	g_signal_emit_by_name (G_OBJECT(self), "updated", self->selected_output);
 
+}
 static void
 cc_display_settings_get_property (GObject    *object,
                                   guint       prop_id,
@@ -701,12 +718,15 @@ cc_display_settings_class_init (CcDisplaySettingsClass *klass)
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, underscanning_switch);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, variable_refresh_rate_row);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, variable_refresh_rate_switch);
+  gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, dpst_row);
+  gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, dpst_switch);
 
   gtk_widget_class_bind_template_callback (widget_class, on_orientation_selection_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_refresh_rate_selection_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_resolution_selection_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_underscanning_switch_active_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_variable_refresh_rate_switch_active_changed_cb);
+  gtk_widget_class_bind_template_callback (widget_class, on_dpst_switch_active_changed_cb);
 }
 
 static void

@@ -284,6 +284,12 @@ typedef enum _CcDisplayMonitorUnderscanning
   UNDERSCANNING_ENABLED
 } CcDisplayMonitorUnderscanning;
 
+typedef enum _CcDisplayMonitorDPST
+{
+  DPST_UNSUPPORTED = 0,
+  DPST_DISABLED,
+  DPST_ENABLED
+} CcDisplayMonitorDPST;
 typedef enum _CcDisplayMonitorVariableRefreshRate
 {
   VRR_UNSUPPORTED = 0,
@@ -307,6 +313,7 @@ struct _CcDisplayMonitorDBus
   gboolean builtin;
   CcDisplayMonitorUnderscanning underscanning;
   CcDisplayMonitorVariableRefreshRate vrr_mode;
+  CcDisplayMonitorDPST dpst_mode;
   int max_width;
   int max_height;
 
@@ -623,6 +630,17 @@ cc_display_monitor_dbus_get_variable_refresh_rate (CcDisplayMonitor *pself)
   return self->vrr_mode == VRR_ENABLED;
 }
 
+static void 
+cc_display_monitor_dbus_set_dpst(CcDisplayMonitor *pself, gboolean enabled)
+{
+	 CcDisplayMonitorDBus *self = CC_DISPLAY_MONITOR_DBUS (pself);
+	 if( self->dpst_mode = DPST_UNSUPPORTED)
+		 return;
+	 if(enabled)
+		 self->dpst_mode = DPST_ENABLED;
+	 else
+		 self->dpst_mode = DPST_DISABLED;
+}
 static void
 cc_display_monitor_dbus_set_variable_refresh_rate (CcDisplayMonitor *pself,
                                                    gboolean enabled)
@@ -751,6 +769,7 @@ cc_display_monitor_dbus_init (CcDisplayMonitorDBus *self)
 {
   self->underscanning = UNDERSCANNING_UNSUPPORTED;
   self->vrr_mode = VRR_UNSUPPORTED;
+  self->dpst_mode = DPST_ENABLED;
   self->max_width = G_MAXINT;
   self->max_height = G_MAXINT;
 }
@@ -808,6 +827,7 @@ cc_display_monitor_dbus_class_init (CcDisplayMonitorDBusClass *klass)
   parent_class->supports_variable_refresh_rate = cc_display_monitor_dbus_supports_variable_refresh_rate;
   parent_class->get_variable_refresh_rate = cc_display_monitor_dbus_get_variable_refresh_rate;
   parent_class->set_variable_refresh_rate = cc_display_monitor_dbus_set_variable_refresh_rate;
+  parent_class->set_dpst = cc_display_monitor_dbus_set_dpst;
   parent_class->set_mode = cc_display_monitor_dbus_set_mode;
   parent_class->set_position = cc_display_monitor_dbus_set_position;
   parent_class->get_scale = cc_display_monitor_dbus_get_scale;
