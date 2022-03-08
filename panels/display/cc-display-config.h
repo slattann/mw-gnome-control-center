@@ -125,6 +125,8 @@ struct _CcDisplayMonitorClass
   gboolean          (*get_variable_refresh_rate)      (CcDisplayMonitor *self);
   void              (*set_variable_refresh_rate)      (CcDisplayMonitor *self,
                                                        gboolean          u);
+  void              (*set_dpst)      (CcDisplayMonitor *self, gboolean          u);
+
   CcDisplayMode*    (*get_mode)               (CcDisplayMonitor  *self);
   CcDisplayMode*    (*get_preferred_mode)     (CcDisplayMonitor  *self);
   GList*            (*get_modes)              (CcDisplayMonitor  *self);

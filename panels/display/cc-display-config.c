@@ -341,6 +341,12 @@ cc_display_monitor_set_variable_refresh_rate (CcDisplayMonitor *self,
   return CC_DISPLAY_MONITOR_GET_CLASS (self)->set_variable_refresh_rate (self, enabled);
 }
 
+void
+cc_display_monitor_set_dpst (CcDisplayMonitor *self, gboolean enabled)
+{
+  return CC_DISPLAY_MONITOR_GET_CLASS (self)->set_dpst (self, enabled);
+}
+
 
 void
 cc_display_monitor_set_mode (CcDisplayMonitor *self, CcDisplayMode *m)
