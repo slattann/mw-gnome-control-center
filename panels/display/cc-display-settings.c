@@ -27,6 +27,7 @@
 #include "cc-display-config.h"
 
 #define MAX_SCALE_BUTTONS 5
+#define AGGRESSIVENESS_LEVEL_PREVIEW_TIMEOUT_SECONDS 5
 
 struct _CcDisplaySettings
 {
@@ -54,6 +55,13 @@ struct _CcDisplaySettings
   GtkWidget        *variable_refresh_rate_switch;
   GtkWidget        *dpst_row;
   GtkWidget        *dpst_switch;
+  GtkWidget        *dpst_scale;
+  GtkWidget        *agr_level;
+//  GtkAdjustment    *adjustment_aggr_level;
+  GSettings        *settings_display;
+  GDBusProxy       *proxy_value;
+  GCancellable     *cancellable;
+  gboolean         ignore_value_changed;
 };
 
 typedef struct _CcDisplaySettings CcDisplaySettings;
@@ -249,6 +257,7 @@ fprintf(stderr, "[SAMEER][%s:%d] \n", __func__,__LINE__);
       gtk_widget_set_visible (self->underscanning_row, FALSE);
       gtk_widget_set_visible (self->variable_refresh_rate_row, FALSE);
       gtk_widget_set_visible (self->dpst_row, TRUE);
+      gtk_widget_set_visible (self->agr_level, TRUE);
 
       return G_SOURCE_REMOVE;
     }
@@ -261,6 +270,7 @@ fprintf(stderr, "[SAMEER][%s:%d] \n", __func__,__LINE__);
   g_object_freeze_notify ((GObject*) self->underscanning_switch);
   g_object_freeze_notify ((GObject*) self->variable_refresh_rate_switch);
   g_object_freeze_notify ((GObject*) self->dpst_switch);
+  g_object_freeze_notify ((GObject*) self->dpst_scale);
 
   cc_display_monitor_get_geometry (self->selected_output, NULL, NULL, &width, &height);
 
@@ -452,12 +462,16 @@ fprintf(stderr, "[SAMEER][%s:%d] \n", __func__,__LINE__);
                          cc_display_monitor_get_variable_refresh_rate (self->selected_output));
   gtk_switch_set_active (GTK_SWITCH (self->dpst_switch), TRUE);
 
+  gtk_switch_set_active (GTK_SWITCH (self->dpst_switch), TRUE);
+  gtk_switch_set_active (GTK_SCALE (self->dpst_scale), TRUE);
+
   self->updating = TRUE;
   g_object_thaw_notify ((GObject*) self->orientation_row);
   g_object_thaw_notify ((GObject*) self->refresh_rate_row);
   g_object_thaw_notify ((GObject*) self->resolution_row);
   g_object_thaw_notify ((GObject*) self->underscanning_switch);
   g_object_thaw_notify ((GObject*) self->variable_refresh_rate_switch);
+
   self->updating = FALSE;
 
   return G_SOURCE_REMOVE;
@@ -597,6 +611,37 @@ on_dpst_switch_active_changed_cb (GtkWidget         *widget,
 	g_signal_emit_by_name (G_OBJECT(self), "updated", self->selected_output);
 
 }
+
+static void
+on_agg_level_scale_active_changed_cb (//GtkWidget         *widget,
+                                     GtkAdjustment    *adjustment,
+   //                                  GParamSpec        *pspec,
+                                      CcDisplaySettings *self)
+{
+  int value;
+
+//  if (self->ignore_value_changed)
+  //  return;
+  if (adjustment)
+  value = gtk_adjustment_get_value (adjustment);
+  
+  fprintf(stderr, "[DPST-GUI][%s:%d] entry [Value:%d]\n", __func__,__LINE__, value);
+
+  g_debug ("new value = %.0f", value);
+  if (self->proxy_value != NULL)
+    g_dbus_proxy_call (self->proxy_value,
+                       "AggressivenessLevelPreview",
+                       g_variant_new ("(u)", AGGRESSIVENESS_LEVEL_PREVIEW_TIMEOUT_SECONDS),
+                       G_DBUS_CALL_FLAGS_NONE,
+                       5000,
+                       NULL,
+                       NULL,
+                       NULL);
+
+  g_settings_set_uint (self->settings_display, "Aggressiveness Level", (guint) value);
+
+}
+
 static void
 cc_display_settings_get_property (GObject    *object,
                                   guint       prop_id,
@@ -709,6 +754,7 @@ cc_display_settings_class_init (CcDisplaySettingsClass *klass)
                 0, NULL, NULL, NULL,
                 G_TYPE_NONE, 1, CC_TYPE_DISPLAY_MONITOR);
 
+
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, orientation_row);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, refresh_rate_row);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, resolution_row);
@@ -720,6 +766,9 @@ cc_display_settings_class_init (CcDisplaySettingsClass *klass)
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, variable_refresh_rate_switch);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, dpst_row);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, dpst_switch);
+  gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, agr_level);
+  gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, dpst_scale);
+
 
   gtk_widget_class_bind_template_callback (widget_class, on_orientation_selection_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_refresh_rate_selection_changed_cb);
@@ -727,6 +776,7 @@ cc_display_settings_class_init (CcDisplaySettingsClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, on_underscanning_switch_active_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_variable_refresh_rate_switch_active_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_dpst_switch_active_changed_cb);
+  gtk_widget_class_bind_template_callback (widget_class, on_agg_level_scale_active_changed_cb);
 }
 
 static void
@@ -756,6 +806,37 @@ cc_display_settings_init (CcDisplaySettings *self)
                                  G_LIST_MODEL (self->resolution_list),
                                  (HdyComboRowGetNameFunc) make_resolution_string,
                                  NULL, NULL);
+
+ gtk_scale_add_mark (GTK_SCALE (self->dpst_scale),
+                      0, GTK_POS_BOTTOM,
+                      _("Min"));
+
+  gtk_scale_add_mark (GTK_SCALE (self->dpst_scale),
+                      1, GTK_POS_BOTTOM,
+                      NULL);
+
+  gtk_scale_add_mark (GTK_SCALE (self->dpst_scale),
+                      2, GTK_POS_BOTTOM,
+                      NULL);
+
+   gtk_scale_add_mark (GTK_SCALE (self->dpst_scale),
+                      3, GTK_POS_BOTTOM,
+                      NULL);
+
+  gtk_scale_add_mark (GTK_SCALE (self->dpst_scale),
+                      4, GTK_POS_BOTTOM,
+                      NULL);
+
+
+  gtk_scale_add_mark (GTK_SCALE (self->dpst_scale),
+                      5, GTK_POS_BOTTOM,
+                      _("Max"));
+
+//  self->cancellable = g_cancellable_new ();
+ // self->settings_display = g_settings_new (DISPLAY_SCHEMA);
+
+  //g_signal_connect_object (self->settings_display, "changed", G_CALLBACK (dialog_settings_changed_cb), self, G_CONNECT_SWAPPED);
+
 
   self->updating = FALSE;
 }
