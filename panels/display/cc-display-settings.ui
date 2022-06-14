@@ -71,6 +71,20 @@
               </object>
             </child>
           </object>
+  	</child>
+	        <child>
+          <object class="AdwActionRow" id="image_enhancer_row">
+            <property name="width_request">100</property>
+            <property name="title" translatable="yes">Image Enhancer</property>
+            <child>
+              <object class="GtkSwitch" id="image_enhancer_switch">
+                <property name="can_focus">False</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <signal name="notify::active" handler="on_image_enhancer_switch_active_changed_cb" swapped="no"/>
+              </object>
+            </child>
+          </object>
         </child>
         <child>
           <object class="AdwActionRow" id="underscanning_row">

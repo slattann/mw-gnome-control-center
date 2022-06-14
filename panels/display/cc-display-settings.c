@@ -59,6 +59,8 @@ struct _CcDisplaySettings
   GtkWidget        *underscanning_switch;
   GtkWidget        *variable_refresh_rate_row;
   GtkWidget        *variable_refresh_rate_switch;
+  GtkWidget        *image_enhancer_row;
+  GtkWidget        *image_enhancer_switch;
 };
 
 typedef struct _CcDisplaySettings CcDisplaySettings;
@@ -257,6 +259,7 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
       gtk_widget_set_visible (self->scale_buttons_row, FALSE);
       gtk_widget_set_visible (self->underscanning_row, FALSE);
       gtk_widget_set_visible (self->variable_refresh_rate_row, FALSE);
+      gtk_widget_set_visible (self->image_enhancer_row, FALSE);
 
       return G_SOURCE_REMOVE;
     }
@@ -268,6 +271,7 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
   g_object_freeze_notify ((GObject*) self->scale_combo_row);
   g_object_freeze_notify ((GObject*) self->underscanning_switch);
   g_object_freeze_notify ((GObject*) self->variable_refresh_rate_switch);
+  g_object_freeze_notify ((GObject*) self->image_enhancer_switch);
 
   cc_display_monitor_get_geometry (self->selected_output, NULL, NULL, &width, &height);
 
@@ -472,7 +476,13 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
                           !cc_display_config_is_cloning (self->config));
   gtk_switch_set_active (GTK_SWITCH (self->variable_refresh_rate_switch),
                          cc_display_monitor_get_variable_refresh_rate (self->selected_output));
-
+#if 1 
+  gtk_widget_set_visible (self->image_enhancer_row,
+                          cc_display_monitor_supports_image_enhancer (self->selected_output) &&
+                          !cc_display_config_is_cloning (self->config));
+  gtk_switch_set_active (GTK_SWITCH (self->image_enhancer_switch),
+                         cc_display_monitor_get_image_enhancer (self->selected_output));
+#endif
   self->updating = TRUE;
   g_object_thaw_notify ((GObject*) self->enabled_switch);
   g_object_thaw_notify ((GObject*) self->orientation_row);
@@ -481,6 +491,7 @@ cc_display_settings_rebuild_ui (CcDisplaySettings *self)
   g_object_thaw_notify ((GObject*) self->scale_combo_row);
   g_object_thaw_notify ((GObject*) self->underscanning_switch);
   g_object_thaw_notify ((GObject*) self->variable_refresh_rate_switch);
+  g_object_thaw_notify ((GObject*) self->image_enhancer_switch);
   self->updating = FALSE;
 
   return G_SOURCE_REMOVE;
@@ -654,6 +665,21 @@ on_variable_refresh_rate_switch_active_changed_cb (GtkWidget         *widget,
 
   g_signal_emit_by_name (G_OBJECT (self), "updated", self->selected_output);
 }
+#if 1
+static void
+on_image_enhancer_switch_active_changed_cb (GtkWidget         *widget,
+                                                   GParamSpec        *pspec,
+                                                   CcDisplaySettings *self)
+{
+  if (self->updating)
+    return;
+
+  cc_display_monitor_set_image_enhancer (self->selected_output,
+                                                gtk_switch_get_active (GTK_SWITCH (self->image_enhancer_switch)));
+
+  g_signal_emit_by_name (G_OBJECT (self), "updated", self->selected_output);
+}
+#endif
 
 
 static void
@@ -782,6 +808,10 @@ cc_display_settings_class_init (CcDisplaySettingsClass *klass)
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, underscanning_switch);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, variable_refresh_rate_row);
   gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, variable_refresh_rate_switch);
+#if 1
+  gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, image_enhancer_row);
+  gtk_widget_class_bind_template_child (widget_class, CcDisplaySettings, image_enhancer_switch);
+#endif
 
   gtk_widget_class_bind_template_callback (widget_class, on_enabled_switch_active_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_orientation_selection_changed_cb);
@@ -790,6 +820,7 @@ cc_display_settings_class_init (CcDisplaySettingsClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, on_scale_selection_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_underscanning_switch_active_changed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_variable_refresh_rate_switch_active_changed_cb);
+  gtk_widget_class_bind_template_callback (widget_class, on_image_enhancer_switch_active_changed_cb);
 }
 
 static void

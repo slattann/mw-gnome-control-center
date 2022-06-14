@@ -341,7 +341,26 @@ cc_display_monitor_set_variable_refresh_rate (CcDisplayMonitor *self,
   return CC_DISPLAY_MONITOR_GET_CLASS (self)->set_variable_refresh_rate (self, enabled);
 }
 
+//Image Enhancer Functions:
+gboolean
+cc_display_monitor_supports_image_enhancer (CcDisplayMonitor *self)
+{
+  return CC_DISPLAY_MONITOR_GET_CLASS (self)->supports_image_enhancer (self);
+}
 
+gboolean
+cc_display_monitor_get_image_enhancer (CcDisplayMonitor *self)
+{
+  return CC_DISPLAY_MONITOR_GET_CLASS (self)->get_image_enhancer (self);
+}
+
+void
+cc_display_monitor_set_image_enhancer (CcDisplayMonitor *self,
+                                              gboolean enabled)
+{
+  return CC_DISPLAY_MONITOR_GET_CLASS (self)->set_image_enhancer (self, enabled);
+}
+//IE functions ended
 void
 cc_display_monitor_set_mode (CcDisplayMonitor *self, CcDisplayMode *m)
 {
